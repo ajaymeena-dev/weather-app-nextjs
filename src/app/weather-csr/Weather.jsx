@@ -1,51 +1,56 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function SearchWeather() {
-  const [city, setCity] = useState("");
+export default function Weather() {
+  const [city, setCity] = useState("indore");
+  const [searchCity, setSearchCity] = useState("indore");
   const [loading, setLoading] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [error, setError] = useState(null);
+  const trimmedCity = city.trim();
+  useEffect(() => {
+    const fetchWeather = async () => {
+      const URL = `/api/weather?city=${searchCity}`;
 
-  const handleSubmit = async (e) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch(URL);
+        const data = await res.json();
+
+        if (res.ok) {
+          setWeatherData(data.data);
+        } else {
+          setError(data.message);
+          setWeatherData(null);
+        }
+      } catch (err) {
+        setError("Failed to fetch weather data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, [searchCity]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    const API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
+    if (!city.trim()) return;
 
-    if (!city) return;
-
-    const trimmedCity = city.trim();
-
-    const URL = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${trimmedCity}`;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const res = await fetch(URL);
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setWeatherData(data);
-      }
-
-      if (!res.ok) {
-        setError("Something went wrong.");
-        setWeatherData(null);
-      }
-    } catch (error) {
-      console.log(error);
-      setError("Failed to fetch weather data.");
-    } finally {
-      setLoading(false);
-    }
+    setSearchCity(city.trim());
   };
 
   return (
     <div className="flex flex-col items-center gap-5">
       <form
         onSubmit={handleSubmit}
+        method="post"
+        action="#"
         className="flex flex-col sm:flex-row gap-3 items-center"
       >
         <input
